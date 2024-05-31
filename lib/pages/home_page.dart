@@ -1,8 +1,10 @@
 import 'package:fire_database/pages/admin_pages/student_detail_page.dart';
 import 'package:fire_database/pages/admin_pages/teacher_page.dart';
 import 'package:fire_database/pages/admin_pages/uni_page.dart';
+import 'package:fire_database/pages/login_page.dart';
 import 'package:fire_database/pages/teachers_page.dart';
 import 'package:fire_database/pages/unis_page.dart';
+import 'package:fire_database/services/authentication_service.dart';
 import 'package:flutter/material.dart';
 
 import 'details_page.dart';
@@ -19,7 +21,19 @@ class _HomeAdminPageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home Page"),
+        title: TextButton(
+            onPressed: ()async{
+              await AuthenticationService.logout();
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context)=>const LoginPage()
+                  ),
+                  (route)=>false
+              );
+            },
+            child: const Text("Home Page")
+        ),
         titleTextStyle: const TextStyle(
             color: Colors.white,
             fontSize: 28

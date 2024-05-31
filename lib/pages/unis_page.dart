@@ -170,7 +170,6 @@ class _UnisPageState extends State<UnisPage> {
             const SizedBox(height: 90)
           ]
       ),
-
     );
   }
 }

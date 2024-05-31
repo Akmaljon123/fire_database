@@ -3,6 +3,9 @@ import 'package:fire_database/pages/admin_pages/teacher_page.dart';
 import 'package:fire_database/pages/admin_pages/uni_page.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/authentication_service.dart';
+import '../login_page.dart';
+
 class HomeAdminPage extends StatefulWidget {
   const HomeAdminPage({super.key});
 
@@ -15,7 +18,19 @@ class _HomeAdminPageState extends State<HomeAdminPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home Page"),
+        title: TextButton(
+            onPressed: ()async{
+              await AuthenticationService.logout();
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context)=>const LoginPage()
+                  ),
+                      (route)=>false
+              );
+            },
+            child: const Text("Home Page")
+        ),
         titleTextStyle: const TextStyle(
             color: Colors.white,
             fontSize: 28

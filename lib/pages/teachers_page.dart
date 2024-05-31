@@ -177,12 +177,6 @@ class _TeachersPageState extends State<TeachersPage> {
             const SizedBox(height: 90)
           ]
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }

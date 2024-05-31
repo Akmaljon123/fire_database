@@ -60,6 +60,14 @@ class _StudentPageState extends State<StudentPage> {
     await loadData();
   }
 
+  Future<void> deleteData(StudentModel grant)async{
+    isLoading = true;
+    setState(() {});
+
+    await RealTimeDatabase.deleteDataStudents(grant);
+    await loadData();
+  }
+
   @override
   void initState() {
     loadData();
@@ -317,6 +325,9 @@ class _StudentPageState extends State<StudentPage> {
 
 
 
+                          },
+                          onLongPress: ()async{
+                            await deleteData(grantList[index]);
                           },
                           title: Text(
                             grantList[index].name,

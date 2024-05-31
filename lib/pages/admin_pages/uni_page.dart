@@ -45,6 +45,14 @@ class _UniPageState extends State<UniPage> {
     await loadData();
   }
 
+  Future<void> deleteData(UniModel uni)async{
+    isLoading = true;
+    setState(() {});
+
+    await RealTimeDatabase.deleteDataUni(uni, "uni_buildings");
+    await loadData();
+  }
+
   @override
   void initState() {
     loadData();
@@ -282,6 +290,9 @@ class _UniPageState extends State<UniPage> {
                             );
 
 
+                          },
+                          onLongPress: ()async{
+                            await deleteData(uniList[index]);
                           },
                           title: Text(
                             uniList[index].name!,

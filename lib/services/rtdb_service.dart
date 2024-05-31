@@ -138,4 +138,20 @@ class RealTimeDatabase{
   static Future<void> deletePost(String main,String path)async{
     await ref.child(main).child(path).remove();
   }
+
+  static Future<void> deleteDataStudents(StudentModel grant)async{
+    await ref.child("students").child("contract_students").child(grant.id!).remove();
+  }
+
+  static Future<void> deleteDataGrants(StudentGrantModel grant)async{
+    await ref.child("students").child("grants_students").child(grant.id!).remove();
+  }
+
+  static Future<void> deleteDataTeachers(TeacherModel teacher, String main)async{
+    await ref.child(main).child(teacher.id!).remove();
+  }
+
+  static Future<void> deleteDataUni(UniModel uni, String main)async{
+    await ref.child(main).child(uni.id!).remove();
+  }
 }

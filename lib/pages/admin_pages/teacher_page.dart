@@ -49,6 +49,14 @@ class _TeacherPageState extends State<TeacherPage> {
     await loadData();
   }
 
+  Future<void> deleteData(TeacherModel teacher)async{
+    isLoading = true;
+    setState(() {});
+
+    await RealTimeDatabase.deleteDataTeachers(teacher, "teachers");
+    await loadData();
+  }
+
   @override
   void initState() {
     loadData();
@@ -302,6 +310,9 @@ class _TeacherPageState extends State<TeacherPage> {
 
 
 
+                          },
+                          onLongPress: ()async{
+                            await deleteData(teacherList[index]);
                           },
                           title: Text(
                             teacherList[index].name,
