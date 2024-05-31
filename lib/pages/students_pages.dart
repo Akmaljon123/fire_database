@@ -1,6 +1,5 @@
 
 import 'package:fire_database/models/student_grant_model.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/student_model.dart';
@@ -23,8 +22,6 @@ class _StudentsPageState extends State<StudentsPage> {
   TextEditingController level = TextEditingController();
 
   Future<void> storeTeachers(List<StudentModel> teachers) async {
-    DatabaseReference ref = FirebaseDatabase.instance.ref("/students/contract_students");
-
     for (var teacher in teachers) {
       await RealTimeDatabase.saveDataContracts(teacher);
     }

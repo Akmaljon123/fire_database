@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../services/authentication_service.dart';
 import '../services/util_service.dart';
-import 'home_page.dart';
 import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {

@@ -46,10 +46,8 @@ class RealTimeDatabase{
     DatabaseEvent event = await query.once();
     Iterable<DataSnapshot> data = event.snapshot.children;
     for (DataSnapshot e in data) {
-      if(e!=null){
-        list.add(PostModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
-      }
-    }
+      list.add(PostModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
+        }
 
     return list;
   }
@@ -61,10 +59,8 @@ class RealTimeDatabase{
     DatabaseEvent event = await query.once();
     Iterable<DataSnapshot> data = event.snapshot.children;
     for (DataSnapshot e in data) {
-      if(e!=null){
-        list.add(UniModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
-      }
-    }
+      list.add(UniModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
+        }
 
     return list;
   }
@@ -76,10 +72,8 @@ class RealTimeDatabase{
     DatabaseEvent event = await query.once();
     Iterable<DataSnapshot> data = event.snapshot.children;
     for (DataSnapshot e in data) {
-      if(e!=null){
-        list.add(TeacherModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
-      }
-    }
+      list.add(TeacherModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
+        }
 
     return list;
   }
@@ -91,10 +85,8 @@ class RealTimeDatabase{
     DatabaseEvent event = await query.once();
     Iterable<DataSnapshot> data = event.snapshot.children;
     for (DataSnapshot e in data) {
-      if(e!=null){
-        list.add(StudentGrantModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
-      }
-    }
+      list.add(StudentGrantModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
+        }
 
     return list;
   }
@@ -106,10 +98,8 @@ class RealTimeDatabase{
     DatabaseEvent event = await query.once();
     Iterable<DataSnapshot> data = event.snapshot.children;
     for (DataSnapshot e in data) {
-      if(e!=null){
-        list.add(StudentModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
-      }
-    }
+      list.add(StudentModel.fromJson(Map<String, dynamic>.from(e.value as Map)));
+        }
 
     return list;
   }

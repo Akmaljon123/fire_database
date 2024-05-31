@@ -21,13 +21,15 @@ class _HomeAdminPageState extends State<HomeAdminPage> {
         title: TextButton(
             onPressed: ()async{
               await AuthenticationService.logout();
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context)=>const LoginPage()
-                  ),
-                      (route)=>false
-              );
+              if(context.mounted){
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context)=>const LoginPage()
+                    ),
+                        (route)=>false
+                );
+              }
             },
             child: const Text("Home Page")
         ),
