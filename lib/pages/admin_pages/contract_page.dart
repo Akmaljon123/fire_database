@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fire_database/services/cloud_store_service.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/student_model.dart';
-import '../../services/rtdb_service.dart';
 
 class StudentPage extends StatefulWidget {
   const StudentPage({super.key});
@@ -11,7 +12,8 @@ class StudentPage extends StatefulWidget {
 }
 
 class _StudentPageState extends State<StudentPage> {
-  List<StudentModel> grantList = [];
+  List<QueryDocumentSnapshot<Object?>> fireList = [];
+  List<StudentModel> fireListData = [];
   bool isLoading = false;
   TextEditingController name = TextEditingController();
   TextEditingController newName = TextEditingController();
@@ -26,54 +28,57 @@ class _StudentPageState extends State<StudentPage> {
   TextEditingController contract = TextEditingController();
   TextEditingController newContract = TextEditingController();
 
-
-  Future<void> storeTeachers(List<StudentModel> teachers) async {
-    for (var teacher in teachers) {
-      await RealTimeDatabase.saveDataContracts(teacher);
-    }
-  }
-
-  Future<void> loadData() async {
+  Future<void> createDataFire(StudentModel studentModel) async {
     isLoading = true;
     setState(() {});
-    grantList = await RealTimeDatabase.getDataContracts();
+
+    await CFSService.createDataStudents(data: studentModel.toJson(), isContract: true);
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    fireListData = [];
+    isLoading = true;
+    setState(() {});
+    fireList = await CFSService.readDataStudents(isContract: true);
+    for (var e in fireList) {
+      fireListData.add(StudentModel.fromJson(e.data() as Map<String, dynamic>));
+    }
     isLoading = false;
     setState(() {});
   }
 
-  Future<void> createData(StudentModel grant) async {
+  Future<void> updateDataFire({
+    required StudentModel studentModel,
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.saveDataContracts(grant);
-    await loadData();
+    await CFSService.updateDataStudents(data: studentModel.toJson(), isContract: true);
+    await loadDataFire();
   }
 
-  Future<void> updateData(StudentModel grant)async{
+  Future<void> deleteDataFire({
+    required String id,
+    required StudentModel model
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.updateDataStudents(grant);
-    await loadData();
-  }
-
-  Future<void> deleteData(StudentModel grant)async{
-    isLoading = true;
-    setState(() {});
-
-    await RealTimeDatabase.deleteDataStudents(grant);
-    await loadData();
+    await CFSService.deleteDataStudents(isContract: true, data: model.toJson());
+    await loadDataFire();
   }
 
   @override
-  void initState() {
-    loadData();
-    super.initState();
+  void didChangeDependencies()async{
+    await loadDataFire();
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: const Text("Contract Students"),
         titleTextStyle: const TextStyle(
@@ -95,7 +100,7 @@ class _StudentPageState extends State<StudentPage> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: grantList.length,
+                    itemCount: fireListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -126,7 +131,7 @@ class _StudentPageState extends State<StudentPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Name of the Student: ${grantList[index].name}",
+                                              "Name of the Student: ${fireListData[index].name}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -134,7 +139,7 @@ class _StudentPageState extends State<StudentPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Surname of the Student: ${grantList[index].surname}",
+                                              "Surname of the Student: ${fireListData[index].surname}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -142,7 +147,7 @@ class _StudentPageState extends State<StudentPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Module of the Student: ${grantList[index].moduleName}",
+                                              "Module of the Student: ${fireListData[index].moduleName}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -150,7 +155,7 @@ class _StudentPageState extends State<StudentPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Level of the Student: ${grantList[index].level}",
+                                              "Level of the Student: ${fireListData[index].level}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -159,7 +164,7 @@ class _StudentPageState extends State<StudentPage> {
 
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Contact of the Student: ${grantList[index].contract}",
+                                              "Contact of the Student: ${fireListData[index].contract}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -169,11 +174,11 @@ class _StudentPageState extends State<StudentPage> {
                                             const SizedBox(height: 20),
                                             MaterialButton(
                                               onPressed: () {
-                                                name.text = grantList[index].name;
-                                                surname.text = grantList[index].surname;
-                                                module.text = grantList[index].moduleName;
-                                                level.text = grantList[index].level.toString();
-                                                contract.text = grantList[index].contract.toString();
+                                                name.text = fireListData[index].name;
+                                                surname.text = fireListData[index].surname;
+                                                module.text = fireListData[index].moduleName;
+                                                level.text = fireListData[index].level.toString();
+                                                contract.text = fireListData[index].contract.toString();
 
                                                 showDialog(
                                                   context: context,
@@ -273,16 +278,16 @@ class _StudentPageState extends State<StudentPage> {
                                                         const SizedBox(height: 10),
                                                         MaterialButton(
                                                           onPressed: () async {
-                                                            StudentModel student = grantList[index].copyWith(
+                                                            StudentModel student = fireListData[index].copyWith(
                                                                 name: name.text,
                                                                 surname: surname.text,
                                                                 moduleName: module.text,
                                                                 level: int.parse(level.text),
                                                                 contract: int.parse(contract.text),
-                                                                id: grantList[index].id
+                                                                id: fireListData[index].id
                                                             );
 
-                                                            await updateData(student);
+                                                            await updateDataFire(studentModel: student);
 
                                                             if (context.mounted) {
                                                               Navigator.pop(context);
@@ -324,22 +329,22 @@ class _StudentPageState extends State<StudentPage> {
 
                           },
                           onLongPress: ()async{
-                            await deleteData(grantList[index]);
+                            await deleteDataFire(id: fireListData[index].id!, model: fireListData[index]);
                           },
                           title: Text(
-                            grantList[index].name,
+                            fireListData[index].name,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           subtitle: Text(
-                            grantList[index].surname,
+                            fireListData[index].surname,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           trailing: Text(
-                            "${grantList[index].contract}\$",
+                            "${fireListData[index].contract}\$",
                             style: const TextStyle(
                               color: Colors.white
                             ),
@@ -458,7 +463,7 @@ class _StudentPageState extends State<StudentPage> {
                           contract: int.parse(newContract.text)
                       );
 
-                      await createData(student);
+                      await createDataFire(student);
 
                       if (context.mounted) {
                         Navigator.pop(context);

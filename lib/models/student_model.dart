@@ -11,6 +11,8 @@ class StudentModel {
   int level;
   int contract;
   String? id;
+  String? uniId;
+  String? studentID;
 
   StudentModel({
     required this.name,

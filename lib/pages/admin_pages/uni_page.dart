@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../models/uni_model.dart';
-import '../../services/rtdb_service.dart';
+import '../../services/cloud_store_service.dart';
 
 class UniPage extends StatefulWidget {
   const UniPage({super.key});
@@ -10,7 +11,8 @@ class UniPage extends StatefulWidget {
 }
 
 class _UniPageState extends State<UniPage> {
-  List<UniModel> uniList = [];
+  List<QueryDocumentSnapshot<Object?>> uniList = [];
+  List<UniModel> uniListData = [];
   bool isLoading = false;
   TextEditingController name = TextEditingController();
   TextEditingController newName = TextEditingController();
@@ -21,42 +23,51 @@ class _UniPageState extends State<UniPage> {
   TextEditingController newLocation = TextEditingController();
 
 
-  Future<void> loadData() async {
+  Future<void> createDataFire(UniModel uniModel) async {
     isLoading = true;
     setState(() {});
-    uniList = await RealTimeDatabase.getDataUni("uni_buildings");
+
+    await CFSService.createData(isBuilding: true, data: uniModel.toJson());
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    uniListData = [];
+    isLoading = true;
+    setState(() {});
+    uniList = await CFSService.readData(isBuilding: true);
+    for (var e in uniList) {
+      uniListData.add(UniModel.fromJson(e.data() as Map<String, dynamic>));
+    }
     isLoading = false;
     setState(() {});
   }
 
-  Future<void> createData(UniModel uni) async {
+  Future<void> updateDataFire({
+    required UniModel uniModel,
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.saveDataUni(uni, "uni_buildings");
-    await loadData();
+    await CFSService.updateData(data: uniModel.toJson(), isBuilding: true);
+    await loadDataFire();
   }
 
-  Future<void> updateData(UniModel uni)async{
+  Future<void> deleteDataFire({
+    required String id,
+    required UniModel uniModel
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.updateDataUni(uni, "uni_buildings");
-    await loadData();
-  }
-
-  Future<void> deleteData(UniModel uni)async{
-    isLoading = true;
-    setState(() {});
-
-    await RealTimeDatabase.deleteDataUni(uni, "uni_buildings");
-    await loadData();
+    await CFSService.deleteData(isBuilding: false, data: uniModel.toJson());
+    await loadDataFire();
   }
 
   @override
-  void initState() {
-    loadData();
-    super.initState();
+  void didChangeDependencies() async {
+    await loadDataFire();
+    super.didChangeDependencies();
   }
 
   @override
@@ -83,7 +94,7 @@ class _UniPageState extends State<UniPage> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: uniList.length,
+                    itemCount: uniListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -110,24 +121,24 @@ class _UniPageState extends State<UniPage> {
                                             ),
                                           ),
                                           const SizedBox(height: 10),
-                                          Container(
-                                            height: 300,
-                                            width: double.infinity,
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(15),
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(15),
-                                              child: Image.asset(
-                                                uniList[index].url!,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                              ),
-                                            ),
-                                          ),
+                                          // Container(
+                                          //   height: 300,
+                                          //   width: double.infinity,
+                                          //   decoration: BoxDecoration(
+                                          //     borderRadius: BorderRadius.circular(15),
+                                          //   ),
+                                          //   child: ClipRRect(
+                                          //     borderRadius: BorderRadius.circular(15),
+                                          //     child: Image.asset(
+                                          //       // uniList[index].url!,
+                                          //       // fit: BoxFit.cover,
+                                          //       // width: double.infinity,
+                                          //     ),
+                                          //   ),
+                                          // ),
                                           const SizedBox(height: 10),
                                           Text(
-                                            "Name of the building: ${uniList[index].name}",
+                                            "Name of the building: ${uniListData[index].name}",
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 22,
@@ -135,7 +146,7 @@ class _UniPageState extends State<UniPage> {
                                           ),
                                           const SizedBox(height: 10),
                                           Text(
-                                            "Built in: ${uniList[index].year}",
+                                            "Built in: ${uniListData[index].year}",
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 22,
@@ -143,7 +154,7 @@ class _UniPageState extends State<UniPage> {
                                           ),
                                           const SizedBox(height: 10),
                                           Text(
-                                            uniList[index].desc!,
+                                            uniListData[index].desc!,
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 22,
@@ -153,9 +164,9 @@ class _UniPageState extends State<UniPage> {
 
                                           MaterialButton(
                                             onPressed: (){
-                                              name.text = uniList[index].name!;
-                                              desc.text = uniList[index].desc!;
-                                              year.text = uniList[index].year!;
+                                              name.text = uniListData[index].name!;
+                                              desc.text = uniListData[index].desc!;
+                                              year.text = uniListData[index].year!;
 
                                               showDialog(
                                                   context: context,
@@ -242,13 +253,14 @@ class _UniPageState extends State<UniPage> {
 
                                                         MaterialButton(
                                                           onPressed: ()async{
-                                                            UniModel uni = uniList[index].copyWith(
+                                                            UniModel uni = uniListData[index].copyWith(
                                                               name: name.text,
                                                               desc: desc.text,
-                                                              year: year.text
+                                                              year: year.text,
+                                                              id: uniListData[index].id
                                                             );
 
-                                                            await updateData(uni);
+                                                            await updateDataFire(uniModel: uni);
 
                                                             if(context.mounted){
                                                               Navigator.pop(context);
@@ -292,17 +304,17 @@ class _UniPageState extends State<UniPage> {
 
                           },
                           onLongPress: ()async{
-                            await deleteData(uniList[index]);
+                            await deleteDataFire(id: uniListData[index].id!, uniModel: uniListData[index]);
                           },
                           title: Text(
-                            uniList[index].name!,
+                            uniListData[index].name!,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
-                          leading: Image.asset(uniList[index].url!),
+                          // leading: Image.asset(uniList[index].url!),
                           subtitle: Text(
-                            uniList[index].year!,
+                            uniListData[index].year!,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
@@ -410,7 +422,7 @@ class _UniPageState extends State<UniPage> {
                           location: newLocation.text
                       );
 
-                      await createData(student);
+                      await createDataFire(student);
 
                       if (context.mounted) {
                         Navigator.pop(context);

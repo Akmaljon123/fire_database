@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_database/models/student_grant_model.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/cloud_store_service.dart';
 import '../../services/rtdb_service.dart';
 
 class StudentGrantPage extends StatefulWidget {
@@ -13,6 +15,8 @@ class StudentGrantPage extends StatefulWidget {
 class _StudentGrantPageState extends State<StudentGrantPage> {
   List<StudentGrantModel> grantList = [];
   bool isLoading = false;
+  List<QueryDocumentSnapshot<Object?>> fireList = [];
+  List<StudentGrantModel> fireListData = [];
   TextEditingController name = TextEditingController();
   TextEditingController newName = TextEditingController();
   TextEditingController surname = TextEditingController();
@@ -24,10 +28,45 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
   TextEditingController level = TextEditingController();
   TextEditingController newLevel = TextEditingController();
 
-  Future<void> storeTeachers(List<StudentGrantModel> teachers) async {
-    for (var teacher in teachers) {
-      await RealTimeDatabase.saveDataGrants(teacher);
+  Future<void> createDataFire(StudentGrantModel studentModel) async {
+    isLoading = true;
+    setState(() {});
+
+    await CFSService.createDataStudents(data: studentModel.toJson(), isContract: false);
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    fireListData = [];
+    isLoading = true;
+    setState(() {});
+    fireList = await CFSService.readDataStudents(isContract: false);
+    for (var e in fireList) {
+      fireListData.add(StudentGrantModel.fromJson(e.data() as Map<String, dynamic>));
     }
+    isLoading = false;
+    setState(() {});
+  }
+
+  Future<void> updateDataFire({
+    required StudentGrantModel studentModel,
+  })async{
+    isLoading = true;
+    setState(() {});
+
+    await CFSService.updateDataStudents(data: studentModel.toJson(), isContract: false);
+    await loadDataFire();
+  }
+
+  Future<void> deleteDataFire({
+    required String id,
+    required StudentGrantModel model
+  })async{
+    isLoading = true;
+    setState(() {});
+
+    await CFSService.deleteDataStudents(isContract: false, data: model.toJson());
+    await loadDataFire();
   }
 
   Future<void> loadData() async {
@@ -62,10 +101,11 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
     await loadData();
   }
   
+
   @override
-  void initState() {
-    loadData();
-    super.initState();
+  void didChangeDependencies()async{
+    await loadDataFire();
+    super.didChangeDependencies();
   }
   
   @override
@@ -92,7 +132,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: grantList.length,
+                    itemCount: fireListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -123,7 +163,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Name of the Student: ${grantList[index].name}",
+                                              "Name of the Student: ${fireListData[index].name}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -131,7 +171,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Surname of the Student: ${grantList[index].surname}",
+                                              "Surname of the Student: ${fireListData[index].surname}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -139,7 +179,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Module of the Student: ${grantList[index].moduleName}",
+                                              "Module of the Student: ${fireListData[index].moduleName}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -147,7 +187,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Level of the Student: ${grantList[index].level}",
+                                              "Level of the Student: ${fireListData[index].level}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -156,10 +196,10 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                             const SizedBox(height: 20),
                                             MaterialButton(
                                               onPressed: () {
-                                                name.text = grantList[index].name;
-                                                surname.text = grantList[index].surname;
-                                                module.text = grantList[index].moduleName;
-                                                level.text = grantList[index].level.toString();
+                                                name.text = fireListData[index].name;
+                                                surname.text = fireListData[index].surname;
+                                                module.text = fireListData[index].moduleName;
+                                                level.text = fireListData[index].level.toString();
 
                                                 showDialog(
                                                   context: context,
@@ -241,15 +281,15 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                                                         const SizedBox(height: 10),
                                                         MaterialButton(
                                                           onPressed: () async {
-                                                            StudentGrantModel student = grantList[index].copyWith(
+                                                            StudentGrantModel student = fireListData[index].copyWith(
                                                               name: name.text,
                                                               surname: surname.text,
                                                               moduleName: module.text,
                                                               level: int.parse(level.text),
-                                                              id: grantList[index].id
+                                                              id: fireListData[index].id
                                                             );
 
-                                                            await updateData(student);
+                                                            await updateDataFire(studentModel: student);
 
                                                             if (context.mounted) {
                                                               Navigator.pop(context);
@@ -291,22 +331,22 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
 
                           },
                           onLongPress: ()async{
-                            await deleteData(grantList[index]);
+                            await deleteDataFire(model: fireListData[index], id: fireListData[index].id!);
                           },
                           title: Text(
-                            grantList[index].name,
+                            fireListData[index].name,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           subtitle: Text(
-                            grantList[index].surname,
+                            fireListData[index].surname,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           trailing: Text(
-                            grantList[index].moduleName,
+                            fireListData[index].moduleName,
                             style: const TextStyle(
                               color: Colors.white
                             ),
@@ -410,7 +450,7 @@ class _StudentGrantPageState extends State<StudentGrantPage> {
                           level: int.parse(newLevel.text)
                       );
 
-                      await createData(student);
+                      await createDataFire(student);
 
                       if (context.mounted) {
                         Navigator.pop(context);

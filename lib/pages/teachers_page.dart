@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/teacher_model.dart';
-import '../../services/rtdb_service.dart';
+import '../services/cloud_store_service.dart';
 
 class TeachersPage extends StatefulWidget {
   const TeachersPage({super.key});
@@ -11,7 +12,8 @@ class TeachersPage extends StatefulWidget {
 }
 
 class _TeachersPageState extends State<TeachersPage> {
-  List<TeacherModel> teacherList = [];
+  List<QueryDocumentSnapshot<Object?>> teacherList = [];
+  List<TeacherModel> teacherListData = [];
   bool isLoading = false;
   TextEditingController name = TextEditingController();
   TextEditingController surname = TextEditingController();
@@ -20,34 +22,51 @@ class _TeachersPageState extends State<TeachersPage> {
   TextEditingController level = TextEditingController();
 
 
-  Future<void> loadData() async {
+  Future<void> createDataFire(TeacherModel teacherModel) async {
     isLoading = true;
     setState(() {});
-    teacherList = await RealTimeDatabase.getDataTeachers("teachers");
+
+    await CFSService.createData(isBuilding: false, data: teacherModel.toJson());
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    teacherListData = [];
+    isLoading = true;
+    setState(() {});
+    teacherList = await CFSService.readData(isBuilding: false);
+    for (var e in teacherList) {
+      teacherListData.add(TeacherModel.fromJson(e.data() as Map<String, dynamic>));
+    }
     isLoading = false;
     setState(() {});
   }
 
-  Future<void> createData(TeacherModel teacher) async {
+  Future<void> updateDataFire({
+    required TeacherModel teacherModel,
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.saveDataTeachers(teacher, "teachers");
-    await loadData();
+    await CFSService.updateData(data: teacherModel.toJson(), isBuilding: false);
+    await loadDataFire();
   }
 
-  Future<void> updateData(TeacherModel teacher)async{
+  Future<void> deleteDataFire({
+    required String id,
+    required TeacherModel model
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.updateDataTeachers(teacher, "teachers");
-    await loadData();
+    await CFSService.deleteData(isBuilding: false, data: model.toJson());
+    await loadDataFire();
   }
 
   @override
-  void initState() {
-    loadData();
-    super.initState();
+  void didChangeDependencies() async {
+    await loadDataFire();
+    super.didChangeDependencies();
   }
 
   @override
@@ -74,7 +93,7 @@ class _TeachersPageState extends State<TeachersPage> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: teacherList.length,
+                    itemCount: teacherListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -105,7 +124,7 @@ class _TeachersPageState extends State<TeachersPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Name of the Teacher: ${teacherList[index].name}",
+                                              "Name of the Teacher: ${teacherListData[index].name}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -113,7 +132,7 @@ class _TeachersPageState extends State<TeachersPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Surname of the Teacher: ${teacherList[index].surname}",
+                                              "Surname of the Teacher: ${teacherListData[index].surname}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -121,7 +140,7 @@ class _TeachersPageState extends State<TeachersPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Salary of the Teacher: ${teacherList[index].salary}\$",
+                                              "Salary of the Teacher: ${teacherListData[index].salary}\$",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -129,7 +148,7 @@ class _TeachersPageState extends State<TeachersPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Module of the Teacher: ${teacherList[index].moduleName}",
+                                              "Module of the Teacher: ${teacherListData[index].moduleName}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -137,7 +156,7 @@ class _TeachersPageState extends State<TeachersPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Level of the Teacher: ${teacherList[index].level}",
+                                              "Level of the Teacher: ${teacherListData[index].level}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -157,13 +176,13 @@ class _TeachersPageState extends State<TeachersPage> {
 
                           },
                           title: Text(
-                            teacherList[index].name,
+                            teacherListData[index].name,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           subtitle: Text(
-                            teacherList[index].surname,
+                            teacherListData[index].surname,
                             style: const TextStyle(
                                 color: Colors.white
                             ),

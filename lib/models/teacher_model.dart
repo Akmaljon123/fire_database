@@ -27,6 +27,7 @@ class TeacherModel {
     int? salary,
     String? moduleName,
     String? level,
+    String? id
   }) =>
       TeacherModel(
         name: name ?? this.name,

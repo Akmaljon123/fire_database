@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fire_database/models/student_grant_model.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/rtdb_service.dart';
+import '../services/cloud_store_service.dart';
 
 class StudentGrantPages extends StatefulWidget {
   const StudentGrantPages({super.key});
@@ -11,7 +12,8 @@ class StudentGrantPages extends StatefulWidget {
 }
 
 class _StudentGrantPagesState extends State<StudentGrantPages> {
-  List<StudentGrantModel> grantList = [];
+  List<QueryDocumentSnapshot<Object?>> fireList = [];
+  List<StudentGrantModel> fireListData = [];
   bool isLoading = false;
   TextEditingController name = TextEditingController();
   TextEditingController surname = TextEditingController();
@@ -19,40 +21,45 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
   TextEditingController module = TextEditingController();
   TextEditingController level = TextEditingController();
 
-  Future<void> storeTeachers(List<StudentGrantModel> teachers) async {
-    for (var teacher in teachers) {
-      await RealTimeDatabase.saveDataGrants(teacher);
-    }
-  }
-
-  Future<void> loadData() async {
+  Future<void> createDataFire(StudentGrantModel studentModel) async {
     isLoading = true;
     setState(() {});
-    grantList = await RealTimeDatabase.getDataGrants();
+
+    await CFSService.createDataStudents(data: studentModel.toJson(), isContract: false);
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    fireListData = [];
+    isLoading = true;
+    setState(() {});
+    fireList = await CFSService.readDataStudents(isContract: false);
+    for (var e in fireList) {
+      fireListData.add(StudentGrantModel.fromJson(e.data() as Map<String, dynamic>));
+    }
     isLoading = false;
     setState(() {});
   }
 
-  Future<void> createData(StudentGrantModel grant) async {
+  Future<void> updateDataFire({
+    required StudentGrantModel studentModel,
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.saveDataGrants(grant);
-    await loadData();
+    await CFSService.updateDataStudents(data: studentModel.toJson(), isContract: false);
+    await loadDataFire();
   }
 
-  Future<void> updateData(StudentGrantModel grant)async{
+  Future<void> deleteDataFire({
+    required String id,
+    required StudentGrantModel model
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.updateDataGrants(grant);
-    await loadData();
-  }
-
-  @override
-  void initState() {
-    loadData();
-    super.initState();
+    await CFSService.deleteDataStudents(isContract: false, data: model.toJson());
+    await loadDataFire();
   }
 
   @override
@@ -79,7 +86,7 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: grantList.length,
+                    itemCount: fireListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -110,7 +117,7 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Name of the Student: ${grantList[index].name}",
+                                              "Name of the Student: ${fireListData[index].name}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -118,7 +125,7 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Surname of the Student: ${grantList[index].surname}",
+                                              "Surname of the Student: ${fireListData[index].surname}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -126,7 +133,7 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Module of the Student: ${grantList[index].moduleName}",
+                                              "Module of the Student: ${fireListData[index].moduleName}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -134,7 +141,7 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Level of the Student: ${grantList[index].level}",
+                                              "Level of the Student: ${fireListData[index].level}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -154,13 +161,13 @@ class _StudentGrantPagesState extends State<StudentGrantPages> {
 
                           },
                           title: Text(
-                            grantList[index].name,
+                            fireListData[index].name,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           subtitle: Text(
-                            grantList[index].surname,
+                            fireListData[index].surname,
                             style: const TextStyle(
                                 color: Colors.white
                             ),

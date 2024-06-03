@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/teacher_model.dart';
-import '../../services/rtdb_service.dart';
+import '../../services/cloud_store_service.dart';
 
 class TeacherPage extends StatefulWidget {
   const TeacherPage({super.key});
@@ -11,7 +12,8 @@ class TeacherPage extends StatefulWidget {
 }
 
 class _TeacherPageState extends State<TeacherPage> {
-  List<TeacherModel> teacherList = [];
+  List<QueryDocumentSnapshot<Object?>> teacherList = [];
+  List<TeacherModel> teacherListData = [];
   bool isLoading = false;
   TextEditingController name = TextEditingController();
   TextEditingController newName = TextEditingController();
@@ -25,42 +27,52 @@ class _TeacherPageState extends State<TeacherPage> {
   TextEditingController newLevel = TextEditingController();
 
 
-  Future<void> loadData() async {
+  Future<void> createDataFire(TeacherModel teacherModel) async {
     isLoading = true;
     setState(() {});
-    teacherList = await RealTimeDatabase.getDataTeachers("teachers");
+
+    await CFSService.createData(isBuilding: false, data: teacherModel.toJson());
+    await loadDataFire();
+  }
+
+  Future<void> loadDataFire() async {
+    teacherListData = [];
+    isLoading = true;
+    setState(() {});
+    teacherList = await CFSService.readData(isBuilding: false);
+    for (var e in teacherList) {
+      teacherListData.add(TeacherModel.fromJson(e.data() as Map<String, dynamic>));
+    }
     isLoading = false;
     setState(() {});
   }
 
-  Future<void> createData(TeacherModel teacher) async {
+  Future<void> updateDataFire({
+    required TeacherModel teacherModel,
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.saveDataTeachers(teacher, "teachers");
-    await loadData();
+    await CFSService.updateData(data: teacherModel.toJson(), isBuilding: false);
+    await loadDataFire();
   }
 
-  Future<void> updateData(TeacherModel teacher)async{
+  Future<void> deleteDataFire({
+    required String id,
+    required TeacherModel model
+  })async{
     isLoading = true;
     setState(() {});
 
-    await RealTimeDatabase.updateDataTeachers(teacher, "teachers");
-    await loadData();
+    await CFSService.deleteData(isBuilding: false, data: model.toJson());
+    await loadDataFire();
   }
 
-  Future<void> deleteData(TeacherModel teacher)async{
-    isLoading = true;
-    setState(() {});
-
-    await RealTimeDatabase.deleteDataTeachers(teacher, "teachers");
-    await loadData();
-  }
 
   @override
-  void initState() {
-    loadData();
-    super.initState();
+  void didChangeDependencies() async {
+    await loadDataFire();
+    super.didChangeDependencies();
   }
 
   @override
@@ -87,7 +99,7 @@ class _TeacherPageState extends State<TeacherPage> {
 
             Expanded(
                 child: ListView.builder(
-                    itemCount: teacherList.length,
+                    itemCount: teacherListData.length,
                     itemBuilder: (context, index) {
                       return Card(
                         color: Colors.grey.shade900,
@@ -118,7 +130,7 @@ class _TeacherPageState extends State<TeacherPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Name of the Teacher: ${teacherList[index].name}",
+                                              "Name of the Teacher: ${teacherListData[index].name}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -126,7 +138,7 @@ class _TeacherPageState extends State<TeacherPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Surname of the Teacher: ${teacherList[index].surname}",
+                                              "Surname of the Teacher: ${teacherListData[index].surname}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -134,7 +146,7 @@ class _TeacherPageState extends State<TeacherPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Salary of the Teacher: ${teacherList[index].salary}\$",
+                                              "Salary of the Teacher: ${teacherListData[index].salary}\$",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -142,7 +154,7 @@ class _TeacherPageState extends State<TeacherPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Module of the Teacher: ${teacherList[index].moduleName}",
+                                              "Module of the Teacher: ${teacherListData[index].moduleName}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -150,7 +162,7 @@ class _TeacherPageState extends State<TeacherPage> {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              "Level of the Teacher: ${teacherList[index].level}",
+                                              "Level of the Teacher: ${teacherListData[index].level}",
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 22,
@@ -159,11 +171,11 @@ class _TeacherPageState extends State<TeacherPage> {
                                             const SizedBox(height: 20),
                                             MaterialButton(
                                               onPressed: () {
-                                                name.text = teacherList[index].name;
-                                                surname.text = teacherList[index].surname;
-                                                salary.text = teacherList[index].salary.toString();
-                                                module.text = teacherList[index].moduleName;
-                                                level.text = teacherList[index].level;
+                                                name.text = teacherListData[index].name;
+                                                surname.text = teacherListData[index].surname;
+                                                salary.text = teacherListData[index].salary.toString();
+                                                module.text = teacherListData[index].moduleName;
+                                                level.text = teacherListData[index].level;
 
                                                 showDialog(
                                                   context: context,
@@ -262,15 +274,16 @@ class _TeacherPageState extends State<TeacherPage> {
                                                         const SizedBox(height: 10),
                                                         MaterialButton(
                                                           onPressed: () async {
-                                                            TeacherModel teacher = teacherList[index].copyWith(
+                                                            TeacherModel teacher = teacherListData[index].copyWith(
                                                               name: name.text,
                                                               surname: surname.text,
                                                               salary: int.parse(salary.text),
                                                               moduleName: module.text,
                                                               level: level.text,
+                                                              id: teacherListData[index].id
                                                             );
 
-                                                            await updateData(teacher);
+                                                            await updateDataFire(teacherModel: teacher);
 
                                                             if (context.mounted) {
                                                               Navigator.pop(context);
@@ -312,22 +325,22 @@ class _TeacherPageState extends State<TeacherPage> {
 
                           },
                           onLongPress: ()async{
-                            await deleteData(teacherList[index]);
+                            await deleteDataFire(id: teacherListData[index].id!, model: teacherListData[index]);
                           },
                           title: Text(
-                            teacherList[index].name,
+                            teacherListData[index].name,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           subtitle: Text(
-                            teacherList[index].surname,
+                            teacherListData[index].surname,
                             style: const TextStyle(
                                 color: Colors.white
                             ),
                           ),
                           trailing: Text(
-                            "Salary: ${teacherList[index].salary}\$",
+                            "Salary: ${teacherListData[index].salary}\$",
                             style: const TextStyle(
                               color: Colors.white
                             ),
@@ -407,6 +420,25 @@ class _TeacherPageState extends State<TeacherPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: TextField(
+                      controller: newSalary,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        labelText: "Salary",
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: TextField(
                       controller: newLevel,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
@@ -428,10 +460,10 @@ class _TeacherPageState extends State<TeacherPage> {
                           surname: newSurname.text,
                           moduleName: newModule.text,
                           level: newLevel.text,
-                          salary: int.parse(newSalary.text)
+                          salary: int.parse(newSalary.text),
                       );
 
-                      await createData(student);
+                      await createDataFire(student);
 
                       if (context.mounted) {
                         Navigator.pop(context);

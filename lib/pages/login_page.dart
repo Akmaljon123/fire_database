@@ -32,7 +32,7 @@ class _LoginPageState extends State<LoginPage> {
       if(user != null){
         if(mounted){
 
-          if(email=="akmalahmadjonov798@gmail.com" && pass == "12345678"){
+          if(email=="akmalahmadjonov798@gmail.com" && pass == "akmal505"){
             Utils.fireSnackBar("Successfully registered", context);
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeAdminPage()));
           }else{
